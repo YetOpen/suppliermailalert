@@ -83,13 +83,8 @@ class SupplierMailAlerts extends Module {
             'PS_MAIL_COLOR'
             ), $id_lang, null, $id_shop);
         $delivery = new Address((int) $order->id_address_delivery);
-        $invoice = new Address((int) $order->id_address_invoice);
         $order_date_text = Tools::displayDate($order->date_add);
         $carrier = new Carrier((int) $order->id_carrier);
-        $message = $this->getAllMessages($order->id);
-
-        if (!$message || empty($message))
-            $message = $this->l('No message');
 
         $items_table = '';
 
@@ -107,10 +102,12 @@ class SupplierMailAlerts extends Module {
                 continue;
             } else {
                 $suppliers_cache[$supplier->id]['email'] = $supplier->email;
+                $suppliers_cache[$supplier->id]['total_items'] = 0;
             }
             
             // From now on mostly taken from mailalerts source
             $unit_price = $product['product_price_wt'];
+            $suppliers_cache[$supplier->id]['total_items'] = $unit_price * $product['product_quantity'];
 
             $customization_text = '';
             if (isset($customized_datas[$product['product_id']][$product['product_attribute_id']])) {
@@ -144,18 +141,8 @@ class SupplierMailAlerts extends Module {
 				</tr>';
             
         }
-        $discount_txt = "";
-        foreach ($params['order']->getCartRules() as $discount) {
-            $discount_txt =
-                    '<tr style="background-color:#EBECEE;">
-						<td colspan="4" style="padding:0.6em 0.4em; text-align:right;">' . $this->l('Voucher code:') . ' ' . $discount['name'] . '</td>
-					<td style="padding:0.6em 0.4em; text-align:right;">-' . Tools::displayPrice($discount['value'], $currency, false) . '</td>
-			</tr>';
-        }
         if ($delivery->id_state)
             $delivery_state = new State((int) $delivery->id_state);
-        if ($invoice->id_state)
-            $invoice_state = new State((int) $invoice->id_state);
         
         // Filling-in vars for email
         $template_vars = array(
@@ -163,16 +150,9 @@ class SupplierMailAlerts extends Module {
             '{lastname}' => $customer->lastname,
             '{email}' => $customer->email,
             '{delivery_block_txt}' => MailAlert::getFormatedAddress($delivery, "\n"),
-            '{invoice_block_txt}' => MailAlert::getFormatedAddress($invoice, "\n"),
             '{delivery_block_html}' => MailAlert::getFormatedAddress(
                     $delivery, '<br />', array(
                 'firstname' => '<span style="color:' . $configuration['PS_MAIL_COLOR'] . '; font-weight:bold;">%s</span>',
-                'lastname' => '<span style="color:' . $configuration['PS_MAIL_COLOR'] . '; font-weight:bold;">%s</span>'
-                    )
-            ),
-            '{invoice_block_html}' => MailAlert::getFormatedAddress(
-                    $invoice, '<br />', array(
-                'firstname' => '<span style="color:' . $configuration['PS_MAIL_COLOR'] . ' font-weight:bold;">%s</span>',
                 'lastname' => '<span style="color:' . $configuration['PS_MAIL_COLOR'] . '; font-weight:bold;">%s</span>'
                     )
             ),
@@ -187,31 +167,12 @@ class SupplierMailAlerts extends Module {
             '{delivery_state}' => $delivery->id_state ? $delivery_state->name : '',
             '{delivery_phone}' => $delivery->phone ? $delivery->phone : $delivery->phone_mobile,
             '{delivery_other}' => $delivery->other,
-            '{invoice_company}' => $invoice->company,
-            '{invoice_firstname}' => $invoice->firstname,
-            '{invoice_lastname}' => $invoice->lastname,
-            '{invoice_address2}' => $invoice->address2,
-            '{invoice_address1}' => $invoice->address1,
-            '{invoice_city}' => $invoice->city,
-            '{invoice_postal_code}' => $invoice->postcode,
-            '{invoice_country}' => $invoice->country,
-            '{invoice_state}' => $invoice->id_state ? $invoice_state->name : '',
-            '{invoice_phone}' => $invoice->phone ? $invoice->phone : $invoice->phone_mobile,
-            '{invoice_other}' => $invoice->other,
             '{order_name}' => $order->reference,
             '{shop_name}' => $configuration['PS_SHOP_NAME'],
             '{date}' => $order_date_text,
             '{carrier}' => (($carrier->name == '0') ? $configuration['PS_SHOP_NAME'] : $carrier->name),
             '{payment}' => Tools::substr($order->payment, 0, 32),
-//            '{items}' => $s['items_table'],
-            '{total_paid}' => Tools::displayPrice($order->total_paid, $currency),
-            '{total_products}' => Tools::displayPrice($order->getTotalProductsWithTaxes(), $currency),
-            '{total_discounts}' => Tools::displayPrice($order->total_discounts, $currency),
-            '{total_shipping}' => Tools::displayPrice($order->total_shipping, $currency),
-            '{total_tax_paid}' => Tools::displayPrice(($order->total_products_wt - $order->total_products) + ($order->total_shipping_tax_incl - $order->total_shipping_tax_excl), $currency, false),
-            '{total_wrapping}' => Tools::displayPrice($order->total_wrapping, $currency),
             '{currency}' => $currency->sign,
-            '{message}' => $message
         );
         
 
@@ -227,7 +188,8 @@ class SupplierMailAlerts extends Module {
 
         if ($dir_mail)
             foreach ($suppliers_cache as $s) {
-                $template_vars ['{items}'] = $s['items_table'].$discount_txt;
+                $template_vars ['{items}'] = $s['items_table'];
+                $template_vars ['{total_products}'] = Tools::displayPrice($s['total_items'], $currency);
                 Mail::Send(
                         $id_lang, 
                         'new_order', 
@@ -246,17 +208,4 @@ class SupplierMailAlerts extends Module {
             }
     }
 
-    public function getAllMessages($id) {
-        $messages = Db::getInstance()->executeS(
-            'SELECT `message` FROM `'._DB_PREFIX_.'message`
-            WHERE `id_order` = '.(int)$id.'
-            ORDER BY `id_message` ASC'
-        );
-        $result = array();
-        foreach ($messages as $message) {
-            $result[] = $message['message'];
-        }
-        return implode('<br/>', $result);
-    }
-    
 }
