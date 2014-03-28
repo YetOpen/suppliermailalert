@@ -19,4 +19,4 @@ Lorenzo Milesi <maxxer@yetopen.it>
 
 License
 -------
-GPL
+AFL
