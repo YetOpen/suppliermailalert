@@ -4,7 +4,7 @@
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
 		<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" />
-		<title>Message from {shop_name}</title>
+		<title>Messaggio da {shop_name}</title>
 		
 
 		<style>
@@ -78,12 +78,12 @@
 
 <tr>
 	<td align="center" class="titleblock" style="border:none;padding:7px 0">
-		<span class="title" style="font-weight:500;font-size:28px;text-transform:uppercase;line-height:33px">Congratulations!</span>
+		<span class="title" style="font-weight:500;font-size:28px;text-transform:uppercase;line-height:33px">Congratulazioni!</span>
 	</td>
 </tr>
 <tr>
 	<td class="linkbelow" style="border:none;padding:7px 0">
-		<span>A new order was placed on {shop_name} from the following customer: {firstname} {lastname} ({email})</span>
+		<span>Nuovo ordine su {shop_name} da: {firstname} {lastname} ({email})</span>
 	</td>
 </tr>
 <tr>
@@ -94,8 +94,8 @@
 		<p style="margin:3px 0 7px;text-transform:uppercase;font-weight:500;font-size:18px;border-bottom:1px solid #d6d4d4!important;padding-bottom:10px">
 			Order details		</p>
 		<span style="color:#777">
-			<span style="color:#333"><strong>Order:</strong></span> {order_name} Placed on {date}<br /><br />
-			<span style="color:#333"><strong>Payment:</strong></span> {payment}
+			<span style="color:#333"><strong>Ordine:</strong></span> {order_name} del {date}<br /><br />
+			<span style="color:#333"><strong>Pagamento:</strong></span> {payment}
 		</span>
 	</td>
 </tr>
@@ -104,11 +104,11 @@
 		<table class="table table-recap" bgcolor="#ffffff" style="width:100%;background-color:#fff"><!-- Title -->
 			<thead>
 				<tr>
-					<th style="border:1px solid #DDD!important;background-color:#fbfbfb;font-family:Arial;color:#333;font-size:13px;padding:10px">Reference</th>
-					<th style="border:1px solid #DDD!important;background-color:#fbfbfb;font-family:Arial;color:#333;font-size:13px;padding:10px">Product</th>
-					<th style="border:1px solid #DDD!important;background-color:#fbfbfb;font-family:Arial;color:#333;font-size:13px;padding:10px">Unit price</th>
-					<th style="border:1px solid #DDD!important;background-color:#fbfbfb;font-family:Arial;color:#333;font-size:13px;padding:10px">Quantity</th>
-					<th style="border:1px solid #DDD!important;background-color:#fbfbfb;font-family:Arial;color:#333;font-size:13px;padding:10px">Total price</th>
+					<th style="border:1px solid #DDD!important;background-color:#fbfbfb;font-family:Arial;color:#333;font-size:13px;padding:10px">Codice</th>
+					<th style="border:1px solid #DDD!important;background-color:#fbfbfb;font-family:Arial;color:#333;font-size:13px;padding:10px">Prodotto</th>
+					<th style="border:1px solid #DDD!important;background-color:#fbfbfb;font-family:Arial;color:#333;font-size:13px;padding:10px">Prezzo unitario</th>
+					<th style="border:1px solid #DDD!important;background-color:#fbfbfb;font-family:Arial;color:#333;font-size:13px;padding:10px">Qta</th>
+					<th style="border:1px solid #DDD!important;background-color:#fbfbfb;font-family:Arial;color:#333;font-size:13px;padding:10px">Totale</th>
 				</tr>
 			</thead>
 			<tbody>
@@ -118,7 +118,7 @@
 					</td>
 				</tr>
 				<tr class="conf_body">
-					<td bgcolor="#fbfbfb" align="right" colspan="4" style="color:#333;padding:10px!important;border:1px solid #DDD!important"><strong>Products</strong></td>
+					<td bgcolor="#fbfbfb" align="right" colspan="4" style="color:#333;padding:10px!important;border:1px solid #DDD!important"><strong>Totale prodotti</strong></td>
 					<td bgcolor="#fbfbfb" align="right" style="color:#333;padding:10px!important;border:1px solid #DDD!important">{total_products}</td>
 				</tr>
 			</tbody>
@@ -128,7 +128,7 @@
 <tr>
 	<td class="box" colspan="3" style="background-color:#fbfbfb;border:1px solid #d6d4d4!important;padding:10px!important">
 		<p style="margin:3px 0 7px;text-transform:uppercase;font-weight:500;font-size:18px;border-bottom:1px solid #d6d4d4!important;padding-bottom:10px">
-			Carrier:		</p>
+			Metodo di spedizione:		</p>
 		<span style="color:#777">
 			{carrier}
 		</span>
@@ -143,7 +143,7 @@
 			<tr>
 				<td class="box address" width="310" style="background-color:#fbfbfb;border:1px solid #d6d4d4!important;padding:10px!important">
 					<p style="margin:3px 0 7px;text-transform:uppercase;font-weight:500;font-size:18px;border-bottom:1px solid #d6d4d4!important;padding-bottom:10px">
-						Delivery address					</p>
+						Indirizzo di spedizione					</p>
 					<span style="color:#777">
 						{delivery_block_html}
 					</span>

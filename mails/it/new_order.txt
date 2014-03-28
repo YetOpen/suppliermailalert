@@ -1,38 +1,37 @@
 
 [{shop_url}] 
 
-Congratulations! 
+Congratulazioni! 
 
-A new order was placed on {shop_name} from the following customer:
-{firstname} {lastname} ({email}) 
+Nuovo ordine su {shop_name} da {firstname} {lastname} ({email}) 
 
-Order details 
+Dettagli ordine
 
-ORDER: {order_name} Placed on {date}
+ORDINE: {order_name} del {date}
 
-PAYMENT: {payment} 
+PAGAMENTO: {payment} 
 
-REFERENCE
+CODICE
 
-PRODUCT
+PRODOTTO
 
-UNIT PRICE
+PREZZO UNITARIO
 
-QUANTITY
+QTA
 
-TOTAL PRICE
+TOTALE
 
 {items} 
 
-PRODUCTS
+TOTALE PRODOTTI
 
 {total_products}
 
-Carrier: 
+Metodo di spedizione: 
 
 {carrier} 
 
-Delivery address 
+Indirizzo di spedizione: 
 
 {delivery_block_html} 		 
 
