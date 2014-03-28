@@ -25,8 +25,6 @@ class SupplierMailAlerts extends Module {
     private $_merchant_coverage;
     private $_product_coverage;
 
-    const __MA_MAIL_DELIMITOR__ = "\n";
-
     public function __construct() {
         $this->name = 'suppliermailalerts';
         $this->tab = 'administration';
@@ -68,9 +66,6 @@ class SupplierMailAlerts extends Module {
     }
 
     public function hookActionValidateOrder($params) {
-        if (!$this->_merchant_order || empty($this->_merchant_mails))
-            return;
-
         // Getting differents vars
         $context = Context::getContext();
         $id_lang = (int) $context->language->id;
@@ -78,17 +73,15 @@ class SupplierMailAlerts extends Module {
         $currency = $params['currency'];
         $order = $params['order'];
         $customer = $params['customer'];
-        $configuration = Configuration::getMultiple(
-                        array(
-                    'PS_SHOP_EMAIL',
-                    'PS_MAIL_METHOD',
-                    'PS_MAIL_SERVER',
-                    'PS_MAIL_USER',
-                    'PS_MAIL_PASSWD',
-                    'PS_SHOP_NAME',
-                    'PS_MAIL_COLOR'
-                        ), $id_lang, null, $id_shop
-        );
+        $configuration = Configuration::getMultiple(array(
+            'PS_SHOP_EMAIL',
+            'PS_MAIL_METHOD',
+            'PS_MAIL_SERVER',
+            'PS_MAIL_USER',
+            'PS_MAIL_PASSWD',
+            'PS_SHOP_NAME',
+            'PS_MAIL_COLOR'
+            ), $id_lang, null, $id_shop);
         $delivery = new Address((int) $order->id_address_delivery);
         $invoice = new Address((int) $order->id_address_invoice);
         $order_date_text = Tools::displayDate($order->date_add);
@@ -100,10 +93,23 @@ class SupplierMailAlerts extends Module {
 
         $items_table = '';
 
+        // Will store here suppliers email and products
+        $suppliers_cache = array ();
         $products = $params['order']->getProducts();
         $customized_datas = Product::getAllCustomizedDatas((int) $params['cart']->id);
         Product::addCustomizationPrice($products, $customized_datas);
         foreach ($products as $key => $product) {
+            // Get supplier for the product
+            $supplier = new Supplier($product['id_supplier']);
+            // If the supplier has an email set prepare it, null it otherwise
+            if (empty($supplier->email)) {
+                // We can go on, we don't have to notify this product
+                continue;
+            } else {
+                $suppliers_cache[$supplier->id]['email'] = $supplier->email;
+            }
+            
+            // From now on mostly taken from mailalerts source
             $unit_price = $product['product_price_wt'];
 
             $customization_text = '';
@@ -124,7 +130,7 @@ class SupplierMailAlerts extends Module {
                     $customization_text = preg_replace('/---<br \/>$/', '', $customization_text);
             }
 
-            $items_table .=
+            $suppliers_cache[$supplier->id]['items_table'] .=
                     '<tr style="background-color:' . ($key % 2 ? '#DDE2E6' : '#EBECEE') . ';">
 					<td style="padding:0.6em 0.4em;">' . $product['product_reference'] . '</td>
 					<td style="padding:0.6em 0.4em;">
@@ -137,11 +143,10 @@ class SupplierMailAlerts extends Module {
 					<td style="padding:0.6em 0.4em; text-align:right;">' . Tools::displayPrice(($unit_price * $product['product_quantity']), $currency, false) . '</td>
 				</tr>';
             
-            // Obtain supplier's email address
-            $suppliers = ProductSupplier::getSupplierCollection($product->id);
         }
+        $discount_txt = "";
         foreach ($params['order']->getCartRules() as $discount) {
-            $items_table .=
+            $discount_txt =
                     '<tr style="background-color:#EBECEE;">
 						<td colspan="4" style="padding:0.6em 0.4em; text-align:right;">' . $this->l('Voucher code:') . ' ' . $discount['name'] . '</td>
 					<td style="padding:0.6em 0.4em; text-align:right;">-' . Tools::displayPrice($discount['value'], $currency, false) . '</td>
@@ -151,7 +156,7 @@ class SupplierMailAlerts extends Module {
             $delivery_state = new State((int) $delivery->id_state);
         if ($invoice->id_state)
             $invoice_state = new State((int) $invoice->id_state);
-
+        
         // Filling-in vars for email
         $template_vars = array(
             '{firstname}' => $customer->firstname,
@@ -198,7 +203,7 @@ class SupplierMailAlerts extends Module {
             '{date}' => $order_date_text,
             '{carrier}' => (($carrier->name == '0') ? $configuration['PS_SHOP_NAME'] : $carrier->name),
             '{payment}' => Tools::substr($order->payment, 0, 32),
-            '{items}' => $items_table,
+//            '{items}' => $s['items_table'],
             '{total_paid}' => Tools::displayPrice($order->total_paid, $currency),
             '{total_products}' => Tools::displayPrice($order->getTotalProductsWithTaxes(), $currency),
             '{total_discounts}' => Tools::displayPrice($order->total_discounts, $currency),
@@ -208,27 +213,50 @@ class SupplierMailAlerts extends Module {
             '{currency}' => $currency->sign,
             '{message}' => $message
         );
+        
 
         $iso = Language::getIsoById($id_lang);
         $dir_mail = false;
         if (file_exists(dirname(__FILE__) . '/mails/' . $iso . '/new_order.txt') &&
-                file_exists(dirname(__FILE__) . '/mails/' . $iso . '/new_order.html')
-        )
+                file_exists(dirname(__FILE__) . '/mails/' . $iso . '/new_order.html'))
             $dir_mail = dirname(__FILE__) . '/mails/';
-        // Send 1 email by merchant mail, because Mail::Send doesn't work with an array of recipients
-        $merchant_mails = explode(self::__MA_MAIL_DELIMITOR__, $this->_merchant_mails);
 
         if (file_exists(_PS_MAIL_DIR_ . $iso . '/new_order.txt') &&
-                file_exists(_PS_MAIL_DIR_ . $iso . '/new_order.html')
-        )
+                file_exists(_PS_MAIL_DIR_ . $iso . '/new_order.html'))
             $dir_mail = _PS_MAIL_DIR_;
 
         if ($dir_mail)
-            foreach ($merchant_mails as $merchant_mail) {
+            foreach ($suppliers_cache as $s) {
+                $template_vars ['{items}'] = $s['items_table'].$discount_txt;
                 Mail::Send(
-                        $id_lang, 'new_order', sprintf(Mail::l('New order : #%d - %s', $id_lang), $order->id, $order->reference), $template_vars, $merchant_mail, null, $configuration['PS_SHOP_EMAIL'], $configuration['PS_SHOP_NAME'], null, null, $dir_mail, null, $id_shop
+                        $id_lang, 
+                        'new_order', 
+                        sprintf(Mail::l('New order for your products: #%d - %s', $id_lang), $order->id, $order->reference), 
+                        $template_vars, 
+                        $s['email'], 
+                        null, 
+                        $configuration['PS_SHOP_EMAIL'], 
+                        $configuration['PS_SHOP_NAME'], 
+                        null, 
+                        null, 
+                        $dir_mail, 
+                        null, 
+                        $id_shop
                 );
             }
     }
 
+    public function getAllMessages($id) {
+        $messages = Db::getInstance()->executeS(
+            'SELECT `message` FROM `'._DB_PREFIX_.'message`
+            WHERE `id_order` = '.(int)$id.'
+            ORDER BY `id_message` ASC'
+        );
+        $result = array();
+        foreach ($messages as $message) {
+            $result[] = $message['message'];
+        }
+        return implode('<br/>', $result);
+    }
+    
 }
